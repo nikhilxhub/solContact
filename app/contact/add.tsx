@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { AppHeader } from '../../components/AppHeader';
 import { Layout } from '../../constants/Layout';
@@ -12,12 +12,29 @@ import { Contact } from '../../types';
 
 export default function AddContactScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams();
+
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [wallet, setWallet] = useState('');
     const [skr, setSkr] = useState('');
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    React.useEffect(() => {
+        if (params.walletAddress) {
+            setWallet(params.walletAddress as string);
+        }
+        if (params.name) {
+            setName(params.name as string);
+        }
+        if (params.phone) {
+            setPhone(params.phone as string);
+        }
+        if (params.skrAddress) {
+            setSkr(params.skrAddress as string);
+        }
+    }, [params]);
 
     const handleSave = async () => {
         if (!name.trim()) {

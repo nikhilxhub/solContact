@@ -2,9 +2,13 @@ import * as SQLite from 'expo-sqlite';
 
 export const DATABASE_NAME = 'contacts.db';
 
+let dbInstance: SQLite.SQLiteDatabase | null = null;
+
 export async function getDBConnection() {
-    const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-    return db;
+    if (!dbInstance) {
+        dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME, { useNewConnection: true });
+    }
+    return dbInstance;
 }
 
 export async function createTable() {

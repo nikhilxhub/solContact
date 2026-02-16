@@ -3,6 +3,7 @@
     "name": "contacts",
     "slug": "contacts",
     "version": "1.0.0",
+    "scheme": "contacts",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

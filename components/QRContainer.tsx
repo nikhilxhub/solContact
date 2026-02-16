@@ -1,30 +1,28 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 
-// In a real app, we'd use 'react-native-qrcode-svg', but for UI demo we'll make a placeholder style
-// block that looks like a QR code container.
-// If the user installed a QR lib we could use it, but "No unnecessary third-party UI libraries" implies
-// keeping it simple, though 'react-native-qrcode-svg' is standard for functionality.
-// For the purpose of "Visual Design Demo", I will create a placeholder visual.
-
 interface QRContainerProps {
     value: string;
+    displayValue?: string;
 }
 
-export const QRContainer: React.FC<QRContainerProps> = ({ value }) => {
+export const QRContainer: React.FC<QRContainerProps> = ({ value, displayValue }) => {
     return (
         <View style={styles.container}>
-            <View style={styles.qrPlaceholder}>
-                <View style={[styles.finder, styles.topLeft]} />
-                <View style={[styles.finder, styles.topRight]} />
-                <View style={[styles.finder, styles.bottomLeft]} />
-                <View style={styles.codePattern} />
+            <View style={styles.qrWrapper}>
+                <QRCode
+                    value={value}
+                    size={200}
+                    color="black"
+                    backgroundColor="white"
+                />
             </View>
             <Text style={styles.valueText} numberOfLines={1} ellipsizeMode="middle">
-                {value}
+                {displayValue !== undefined ? displayValue : value}
             </Text>
         </View>
     );
@@ -40,34 +38,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: Colors.border,
     },
-    qrPlaceholder: {
-        width: 200,
-        height: 200,
-        backgroundColor: '#fff', // QR is always on white
-        position: 'relative',
-    },
-    finder: {
-        width: 40,
-        height: 40,
-        borderWidth: 4,
-        borderColor: '#000',
-        position: 'absolute',
-        backgroundColor: '#fff',
-        zIndex: 2,
-    },
-    // Inner square of finder
-    topLeft: { top: 0, left: 0 },
-    topRight: { top: 0, right: 0 },
-    bottomLeft: { bottom: 0, left: 0 },
-    codePattern: {
-        position: 'absolute',
-        top: 10,
-        left: 10,
-        right: 10,
-        bottom: 10,
-        backgroundColor: '#000',
-        opacity: 0.1, // Simulate data
-        borderRadius: 4,
+    qrWrapper: {
+        padding: Layout.spacing.md,
+        backgroundColor: 'white',
+        borderRadius: Layout.radius.md,
+        // Optional: add shadow or border if desired for better contrast
     },
     valueText: {
         marginTop: Layout.spacing.md,

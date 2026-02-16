@@ -69,7 +69,15 @@ export default function ContactDetailScreen() {
     };
 
     const handleShare = () => {
-        router.push('/qr/generate');
+        router.push({
+            pathname: '/qr/generate',
+            params: {
+                name: contact.name,
+                phone: contact.phoneNumber || '',
+                wallet: contact.walletAddress || '',
+                skr: contact.skrAddress || ''
+            }
+        });
     };
 
     const handleCall = () => {

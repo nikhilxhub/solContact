@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Button, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { TextButton } from '../../components/Buttons';
 import { Layout } from '../../constants/Layout';
@@ -8,18 +9,70 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { StatusBar } from 'expo-status-bar';
 
-// Mocking camera view since we don't want to install expo-camera for UI demo unless requested
-// Requirements said: "Camera preview container mock"
-
 export default function QRScanScreen() {
     const router = useRouter();
+    const [permission, requestPermission] = useCameraPermissions();
+    const [scanned, setScanned] = useState(false);
+
+    if (!permission) {
+        // Camera permissions are still loading.
+        return <View style={styles.container} />;
+    }
+
+    if (!permission.granted) {
+        // Camera permissions are not granted yet.
+        return (
+            <View style={styles.container}>
+                <View style={[styles.messageContainer, { padding: 20, alignItems: 'center', justifyContent: 'center', flex: 1 }]}>
+                    <Text style={[styles.message, { color: 'white', marginBottom: 20, textAlign: 'center' }]}>
+                        We need your permission to show the camera
+                    </Text>
+                    <Button onPress={requestPermission} title="grant permission" />
+                </View>
+            </View>
+        );
+    }
+
+    const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
+        setScanned(true);
+
+        try {
+            const parsedData = JSON.parse(data);
+            // Check if it looks like our contact object
+            if (parsedData.wallet || parsedData.name) {
+                router.push({
+                    pathname: '/contact/add',
+                    params: {
+                        name: parsedData.name || '',
+                        phone: parsedData.phone || '',
+                        walletAddress: parsedData.wallet || '',
+                        skrAddress: parsedData.skr || ''
+                    }
+                });
+                return;
+            }
+        } catch (e) {
+            // Not JSON, treat as plain wallet address
+        }
+
+        router.push({
+            pathname: '/contact/add',
+            params: { walletAddress: data }
+        });
+    };
 
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
-            <View style={styles.cameraMock}>
-                <Text style={styles.mockText}>Camera Preview</Text>
-            </View>
+
+            <CameraView
+                style={StyleSheet.absoluteFillObject}
+                facing="back"
+                onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+                barcodeScannerSettings={{
+                    barcodeTypes: ["qr"],
+                }}
+            />
 
             <View style={styles.overlay}>
                 <View style={styles.header}>
@@ -35,16 +88,7 @@ export default function QRScanScreen() {
                     <TextButton
                         title="Cancel"
                         onPress={() => router.back()}
-                    // style={{ backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 }}
-                    // textStyle={{ color: '#fff' }} // If we supported custom text style prop in component
                     />
-                    {/* Since TextButton doesn't support custom text color prop easily without modification,
-              I will assume the component handles it or I should have added it. 
-              For now, let's use a wrapper or just let it be default. 
-              Actually, let's modify TextButton to accept textStyle or just accept that it might be black on dark.
-              Wait, the mock camera is dark gray, so black text might happen.
-              Let's make sure the overlay is handled well.
-          */}
                 </View>
             </View>
         </View>
@@ -56,15 +100,13 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000',
     },
-    cameraMock: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#333',
-        alignItems: 'center',
+    messageContainer: {
+        flex: 1,
         justifyContent: 'center',
     },
-    mockText: {
-        color: '#666',
-        fontSize: 20,
+    message: {
+        textAlign: 'center',
+        paddingBottom: 10,
     },
     overlay: {
         flex: 1,

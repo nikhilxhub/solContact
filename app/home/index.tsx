@@ -56,7 +56,7 @@ export default function HomeScreen() {
                         <TouchableOpacity onPress={handleSettingsPress} style={styles.iconButton}>
                             <Ionicons name="settings-sharp" size={24} color={Colors.text} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => { }} style={[styles.iconButton, { marginLeft: Layout.spacing.md }]}>
+                        <TouchableOpacity onPress={() => router.push('/qr/scan')} style={[styles.iconButton, { marginLeft: Layout.spacing.md }]}>
                             <Ionicons name="scan-outline" size={24} color={Colors.text} />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleAddPress} style={[styles.iconButton, { marginLeft: Layout.spacing.md }]}>

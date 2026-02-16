@@ -51,6 +51,23 @@ export class ContactRepository {
     }
 
     // Add other methods like update, delete, getById as needed
+    static async updateContact(contact: Contact): Promise<void> {
+        const db = await getDBConnection();
+        await db.runAsync(
+            `UPDATE contacts SET name = ?, phoneNumber = ?, walletAddress = ?, skrAddress = ?, avatarUri = ?, notes = ?, updatedAt = ? WHERE id = ?`,
+            [
+                contact.name,
+                contact.phoneNumber || null,
+                contact.walletAddress || null,
+                contact.skrAddress || null,
+                contact.avatarUri || null,
+                contact.notes || null,
+                contact.updatedAt,
+                contact.id
+            ]
+        );
+    }
+
     static async getContactById(id: string): Promise<Contact | null> {
         const db = await getDBConnection();
         const result = await db.getFirstAsync<{

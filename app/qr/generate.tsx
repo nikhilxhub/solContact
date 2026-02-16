@@ -9,11 +9,28 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import * as Clipboard from 'expo-clipboard';
 
+import { useLocalSearchParams } from 'expo-router';
+
 export default function QRGenerateScreen() {
-    const myAddress = '71C7656EC7ab88b098defB751B7401B5f6d899A2';
+    const params = useLocalSearchParams();
+
+    // Default to my identity if no params passed
+    const defaultAddress = '71C7656EC7ab88b098defB751B7401B5f6d899A2';
+
+    const isSharedContact = !!params.wallet;
+
+    const qrData = isSharedContact ? JSON.stringify({
+        name: params.name,
+        phone: params.phone,
+        wallet: params.wallet,
+        skr: params.skr
+    }) : defaultAddress;
+
+    const displayAddress = isSharedContact ? (params.wallet as string) : defaultAddress;
+    const displayName = isSharedContact ? (params.name as string) : 'My Identity';
 
     const handleCopy = async () => {
-        await Clipboard.setStringAsync(myAddress);
+        await Clipboard.setStringAsync(displayAddress);
     };
 
     const handleShare = () => {
@@ -25,15 +42,15 @@ export default function QRGenerateScreen() {
             <AppHeader title="Share Identity" showBack />
             <View style={styles.content}>
                 <View style={styles.qrWrapper}>
-                    <QRContainer value={myAddress} />
+                    <QRContainer value={qrData} displayValue={displayAddress} />
                 </View>
 
                 <View style={styles.infoContainer}>
                     <Text style={styles.instruction}>
-                        Scan to add to Seeker contacts
+                        {isSharedContact ? `Scan to add ${displayName}` : 'Scan to add to Seeker contacts'}
                     </Text>
                     <Text style={styles.addressDisplay} numberOfLines={1} ellipsizeMode="middle">
-                        {myAddress}
+                        {displayAddress}
                     </Text>
                 </View>
 
