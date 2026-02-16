@@ -11,19 +11,58 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { ContactRepository } from '../../repositories/ContactRepository';
+import { Contact } from '../../types';
+
 export default function ContactDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const [contact, setContact] = useState<Contact | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    // Mock data fetching based on ID
-    const contact = {
-        id: id,
-        name: 'Alex V.',
-        phone: '+1 555 019 2834',
-        wallet: '71C7656EC7ab88b098defB751B7401B5f6d899A2',
-        skr: 'alex.skr',
-        notes: 'Met at SOL Denver. Developer at Foundation.',
+    useFocusEffect(
+        useCallback(() => {
+            if (id) {
+                loadContact(id as string);
+            }
+        }, [id])
+    );
+
+    const loadContact = async (contactId: string) => {
+        try {
+            setLoading(true);
+            const data = await ContactRepository.getContactById(contactId);
+            setContact(data);
+        } catch (error) {
+            console.error('Failed to load contact:', error);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <ScreenContainer>
+                <AppHeader title="" showBack />
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text>Loading...</Text>
+                </View>
+            </ScreenContainer>
+        );
+    }
+
+    if (!contact) {
+        return (
+            <ScreenContainer>
+                <AppHeader title="" showBack />
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text>Contact not found</Text>
+                </View>
+            </ScreenContainer>
+        );
+    }
 
     const handleEdit = () => {
         router.push(`/contact/edit/${id}`);
@@ -34,7 +73,11 @@ export default function ContactDetailScreen() {
     };
 
     const handleCall = () => {
-        const url = `tel:${contact.phone}`;
+        if (!contact.phoneNumber) {
+            Alert.alert('Error', 'No phone number available');
+            return;
+        }
+        const url = `tel:${contact.phoneNumber}`;
         Linking.canOpenURL(url)
             .then((supported) => {
                 if (supported) {
@@ -85,19 +128,19 @@ export default function ContactDetailScreen() {
                 <View style={styles.section}>
                     <ListItem
                         label="Phone"
-                        value={contact.phone}
+                        value={contact.phoneNumber}
                         onPress={() => { }}
                         icon="call-outline"
                     />
                     <ListItem
                         label="Wallet"
-                        value={contact.wallet}
+                        value={contact.walletAddress}
                         onPress={() => { }} // Copy action mock
                         icon="wallet-outline"
                     />
                     <ListItem
                         label=".skr"
-                        value={contact.skr}
+                        value={contact.skrAddress}
                         onPress={() => { }}
                         icon="at-outline"
                     />

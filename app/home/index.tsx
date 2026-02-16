@@ -1,27 +1,39 @@
-import React from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { AppHeader } from '../../components/AppHeader';
 import { ContactCard } from '../../components/ContactCard';
 import { Layout } from '../../constants/Layout';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native';
+import { ContactRepository } from '../../repositories/ContactRepository';
+import { Contact } from '../../types';
 
-const MOCK_CONTACTS = [
-    { id: '1', name: 'Alex V.', detail: '71C...9A2' },
-    { id: '2', name: 'Sarah Chen', detail: '+1 555 019 2834' },
-    { id: '3', name: 'David K.', detail: 'david.skr' },
-    { id: '4', name: 'Elena R.', detail: '33D...1B4' },
-    { id: '5', name: 'James W.', detail: '+44 7700 900077' },
-    { id: '6', name: 'Priya P.', detail: 'priya.skr' },
-    { id: '7', name: 'Marcus T.', detail: '99A...2C1' },
-    { id: '8', name: 'Linda B.', detail: '+1 202 555 0171' },
-];
+
 
 export default function HomeScreen() {
     const router = useRouter();
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadContacts = async () => {
+        try {
+            setLoading(true);
+            const data = await ContactRepository.getAllContacts();
+            setContacts(data);
+        } catch (error) {
+            console.error('Failed to load contacts:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            loadContacts();
+        }, [])
+    );
 
     const handleAddPress = () => {
         router.push('/contact/add');
@@ -53,19 +65,30 @@ export default function HomeScreen() {
                     </View>
                 }
             />
-            <FlatList
-                data={MOCK_CONTACTS}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <ContactCard
-                        name={item.name}
-                        detail={item.detail}
-                        onPress={() => handleContactPress(item.id)}
-                    />
-                )}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-            />
+            {loading ? (
+                <View style={[styles.container, { justifyContent: 'center' }]}>
+                    <ActivityIndicator size="large" color={Colors.text} />
+                </View>
+            ) : (
+                <FlatList
+                    data={contacts}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <ContactCard
+                            name={item.name}
+                            detail={item.skrAddress || item.walletAddress || item.phoneNumber || 'No details'}
+                            onPress={() => handleContactPress(item.id)}
+                        />
+                    )}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={{ paddingTop: 50, alignItems: 'center' }}>
+                            <Ionicons name="people-outline" size={48} color={Colors.textSecondary} />
+                        </View>
+                    }
+                />
+            )}
         </ScreenContainer>
     );
 }
@@ -78,5 +101,8 @@ const styles = StyleSheet.create({
     },
     iconButton: {
         padding: 4,
+    },
+    container: {
+        flex: 1,
     },
 });

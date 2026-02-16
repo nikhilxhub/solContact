@@ -2,8 +2,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { createTable } from '../services/Database';
+import { useEffect } from 'react';
 
 export default function RootLayout() {
+    useEffect(() => {
+        createTable().catch(err => console.error('Failed to create table:', err));
+    }, []);
+
     return (
         <View style={{ flex: 1, backgroundColor: Colors.background }}>
             <StatusBar style="dark" backgroundColor={Colors.background} />
