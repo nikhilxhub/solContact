@@ -116,17 +116,22 @@ const styles = StyleSheet.create({
     header: {
         alignItems: 'center',
         marginTop: Layout.spacing.xl,
+        paddingHorizontal: Layout.spacing.lg, // Add padding to prevent edge touching
     },
     title: {
         ...Typography.styles.title,
         color: '#fff',
         marginBottom: Layout.spacing.xs,
+        textAlign: 'center',
     },
     subtitle: {
         ...Typography.styles.body,
         color: '#ccc',
+        textAlign: 'center',
+        width: '100%', // Ensure it takes full width to avoid unnecessary wrapping
     },
     scanFrameContainer: {
+        flex: 1, // Allow it to take available space
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -141,5 +146,11 @@ const styles = StyleSheet.create({
     footer: {
         alignItems: 'center',
         marginBottom: Layout.spacing.lg,
+    },
+    // Overlay structure correction
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'space-between',
+        paddingVertical: Layout.spacing.xxl,
     },
 });

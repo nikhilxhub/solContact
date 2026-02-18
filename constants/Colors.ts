@@ -12,4 +12,5 @@ export const Colors = {
     inputBackground: '#FFFFFF',
     placeholder: '#999999',
     secondary: '#F2F2F2',
+    selection: 'rgba(0, 0, 0, 0.2)', // Light gray for text selection
 };

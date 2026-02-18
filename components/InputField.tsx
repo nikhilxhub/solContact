@@ -48,7 +48,7 @@ export const InputField: React.FC<InputFieldProps> = ({
                 placeholderTextColor={Colors.placeholder}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                selectionColor={Colors.text}
+                selectionColor={Colors.selection}
                 {...props}
             />
             {error && <Text style={styles.errorText}>{error}</Text>}

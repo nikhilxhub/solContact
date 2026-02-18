@@ -98,4 +98,9 @@ export class ContactRepository {
             updatedAt: result.updatedAt
         };
     }
+
+    static async deleteContact(id: string): Promise<void> {
+        const db = await getDBConnection();
+        await db.runAsync('DELETE FROM contacts WHERE id = ?', [id]);
+    }
 }

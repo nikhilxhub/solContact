@@ -35,8 +35,10 @@ export const Avatar: React.FC<AvatarProps> = ({ name, size = 48, uri }) => {
                     styles.text,
                     {
                         fontSize: size * 0.4,
+                        lineHeight: size * 0.5, // Explicit line height to prevent clipping
                     },
                 ]}
+                allowFontScaling={false} // Prevent scaling issues
             >
                 {getInitials(name)}
             </Text>
@@ -57,5 +59,8 @@ const styles = StyleSheet.create({
         ...Typography.styles.body,
         fontWeight: '600',
         color: Colors.text,
+        includeFontPadding: false, // Android specific fix
+        textAlign: 'center',
+        textAlignVertical: 'center',
     },
 });

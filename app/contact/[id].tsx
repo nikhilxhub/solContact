@@ -1,20 +1,18 @@
-import { View, Text, StyleSheet, ScrollView, Linking, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, Linking, Alert, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { AppHeader } from '../../components/AppHeader';
 import { Avatar } from '../../components/Avatar';
-import { ListItem } from '../../components/ListItem';
-import { SectionDivider } from '../../components/SectionDivider';
 import { PrimaryButton, TextButton, IconActionButton } from '../../components/Buttons';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-
 import { useState, useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
 import { ContactRepository } from '../../repositories/ContactRepository';
 import { Contact } from '../../types';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 
 export default function ContactDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -42,23 +40,12 @@ export default function ContactDetailScreen() {
         }
     };
 
-    if (loading) {
+    if (loading || !contact) {
         return (
             <ScreenContainer>
                 <AppHeader title="" showBack />
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text>Loading...</Text>
-                </View>
-            </ScreenContainer>
-        );
-    }
-
-    if (!contact) {
-        return (
-            <ScreenContainer>
-                <AppHeader title="" showBack />
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text>Contact not found</Text>
+                    <Text>{loading ? 'Loading...' : 'Contact not found'}</Text>
                 </View>
             </ScreenContainer>
         );
@@ -86,20 +73,44 @@ export default function ContactDetailScreen() {
             return;
         }
         const url = `tel:${contact.phoneNumber}`;
-        Linking.canOpenURL(url)
-            .then((supported) => {
-                if (supported) {
-                    Linking.openURL(url);
-                } else {
-                    Alert.alert('Error', 'Phone dialer not available');
-                }
-            })
-            .catch((err) => console.error('An error occurred', err));
+        Linking.canOpenURL(url).then((supported) => {
+            if (supported) Linking.openURL(url);
+            else Alert.alert('Error', 'Phone dialer not available');
+        });
     };
 
     const handleSend = () => {
-        // Placeholder for crypto send or message
         Alert.alert('Send Action', 'This feature is coming soon.');
+    };
+
+    const handleDelete = () => {
+        Alert.alert(
+            'Delete Contact',
+            `Are you sure you want to delete ${contact.name}?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await ContactRepository.deleteContact(id as string);
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            router.replace('/home');
+                        } catch (error) {
+                            console.error('Failed to delete contact:', error);
+                            Alert.alert('Error', 'Failed to delete contact. Please try again.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleCopy = async (text: string, label: string) => {
+        await Clipboard.setStringAsync(text);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Alert.alert('Copied', `${label} copied to clipboard`);
     };
 
     return (
@@ -107,71 +118,80 @@ export default function ContactDetailScreen() {
             <AppHeader
                 title=""
                 showBack
-                rightAction={
-                    <TextButton title="Edit" onPress={handleEdit} />
-                }
+                rightAction={<TextButton title="Edit" onPress={handleEdit} />}
             />
             <ScrollView contentContainerStyle={styles.content}>
-                <View style={styles.header}>
-                    <Avatar name={contact.name} size={80} />
+
+                {/* 1. Identity Section (Top) */}
+                <View style={styles.identitySection}>
+                    <Avatar name={contact.name} size={100} />
                     <Text style={styles.name}>{contact.name}</Text>
-
-                    <View style={styles.actionRow}>
-                        <IconActionButton
-                            icon={<Ionicons name="call" size={24} color={Colors.text} />}
-                            label="Call"
-                            onPress={handleCall}
-                            style={{ marginRight: Layout.spacing.lg }}
-                        />
-                        <IconActionButton
-                            icon={<Ionicons name="paper-plane" size={24} color={Colors.text} />}
-                            label="Send"
-                            onPress={handleSend}
-                        />
-                    </View>
+                    {contact.skrAddress && (
+                        <Text style={styles.handle}>@{contact.skrAddress.replace('seeker:', '')}</Text>
+                    )}
                 </View>
 
-                <SectionDivider style={styles.divider} />
-
-                <View style={styles.section}>
-                    <ListItem
-                        label="Phone"
-                        value={contact.phoneNumber}
-                        onPress={() => { }}
-                        icon="call-outline"
+                {/* 2. Hero Actions (Golden Zone) */}
+                <View style={styles.heroActions}>
+                    <IconActionButton
+                        icon={<Ionicons name="call" size={28} color={Colors.background} />}
+                        label="Call"
+                        onPress={handleCall}
+                        style={styles.heroButtonPrimary}
+                        labelStyle={styles.heroLabel}
                     />
-                    <ListItem
-                        label="Wallet"
-                        value={contact.walletAddress}
-                        onPress={() => { }} // Copy action mock
-                        icon="wallet-outline"
-                    />
-                    <ListItem
-                        label=".skr"
-                        value={contact.skrAddress}
-                        onPress={() => { }}
-                        icon="at-outline"
+                    <IconActionButton
+                        icon={<Ionicons name="paper-plane" size={28} color={Colors.text} />}
+                        label="Pay"
+                        onPress={handleSend}
+                        style={styles.heroButtonSecondary}
+                        labelStyle={styles.heroLabelSecondary}
                     />
                 </View>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Notes</Text>
-                    <Text style={styles.notesText}>{contact.notes}</Text>
+                {/* 3. Minimal Details (Bottom) */}
+                <View style={styles.detailsSection}>
+                    {contact.phoneNumber && (
+                        <TouchableOpacity
+                            style={styles.infoRow}
+                            onPress={() => handleCopy(contact.phoneNumber!, 'Mobile Number')}
+                            activeOpacity={0.6}
+                        >
+                            <Text style={styles.infoLabel}>MOBILE</Text>
+                            <Text style={styles.infoValue}>{contact.phoneNumber}</Text>
+                        </TouchableOpacity>
+                    )}
+                    {contact.walletAddress && (
+                        <TouchableOpacity
+                            style={styles.infoRow}
+                            onPress={() => handleCopy(contact.walletAddress!, 'Wallet Address')}
+                            activeOpacity={0.6}
+                        >
+                            <Text style={styles.infoLabel}>WALLET</Text>
+                            <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="middle">
+                                {contact.walletAddress}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                    {contact.notes && (
+                        <View style={styles.notesContainer}>
+                            <Text style={styles.infoLabel}>NOTES</Text>
+                            <Text style={styles.notesValue}>{contact.notes}</Text>
+                        </View>
+                    )}
                 </View>
 
-                <View style={styles.actions}>
-                    <PrimaryButton
-                        title="Share Contact"
-                        onPress={handleShare}
-                        style={styles.shareButton}
-                    />
+                {/* 4. Footer Actions */}
+                <View style={styles.footerActions}>
+                    <TextButton title="Share Contact" onPress={handleShare} style={styles.footerButton} />
                     <TextButton
-                        title="Delete Contact"
-                        onPress={() => router.back()}
-                        style={{ marginTop: Layout.spacing.md }}
-                    // textStyle={{ color: Colors.error }} // If we had error color prop
+                        title="Delete"
+                        onPress={handleDelete}
+                        style={styles.footerButton}
+                        labelStyle={{ color: Colors.error || '#FF3B30' }}
                     />
                 </View>
+
             </ScrollView>
         </ScreenContainer>
     );
@@ -179,46 +199,119 @@ export default function ContactDetailScreen() {
 
 const styles = StyleSheet.create({
     content: {
-        padding: Layout.spacing.lg,
-        paddingTop: Layout.spacing.sm,
+        flexGrow: 1,
+        paddingHorizontal: Layout.spacing.xl,
+        paddingBottom: Layout.spacing.xxl,
     },
-    header: {
+    // Identity
+    identitySection: {
         alignItems: 'center',
-        marginBottom: Layout.spacing.lg,
+        marginTop: Layout.spacing.lg,
+        marginBottom: Layout.spacing.xl,
     },
     name: {
         ...Typography.styles.title,
+        fontSize: 32,
         marginTop: Layout.spacing.md,
+        fontWeight: '700',
+        letterSpacing: -0.5,
         textAlign: 'center',
     },
-    actionRow: {
-        flexDirection: 'row',
-        marginTop: Layout.spacing.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    divider: {
-        marginVertical: Layout.spacing.lg,
-    },
-    section: {
-        marginBottom: Layout.spacing.xl,
-    },
-    sectionTitle: {
-        ...Typography.styles.caption,
-        color: Colors.textSecondary,
-        marginBottom: Layout.spacing.sm,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-    },
-    notesText: {
+    handle: {
         ...Typography.styles.body,
+        color: Colors.textTertiary,
+        marginTop: 4,
+        fontSize: 16,
+    },
+
+    // Hero Actions
+    heroActions: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: Layout.spacing.xl, // Space between buttons
+        marginBottom: Layout.spacing.xxl,
+    },
+    heroButtonPrimary: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: Colors.text, // Black background
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 6,
+    },
+    heroButtonSecondary: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: Colors.background, // White background
+        borderWidth: 1,
+        borderColor: Colors.border,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    heroLabel: {
+        marginTop: 8,
+        fontWeight: '600',
         color: Colors.text,
-        lineHeight: 24,
     },
-    actions: {
-        marginTop: Layout.spacing.xl,
+    heroLabelSecondary: {
+        marginTop: 8,
+        fontWeight: '600',
+        color: Colors.text,
     },
-    shareButton: {
-        width: '100%',
+
+    // Details - Clean List
+    detailsSection: {
+        marginBottom: Layout.spacing.xxl,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: Layout.spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: Colors.border,
+    },
+    infoLabel: {
+        ...Typography.styles.caption,
+        color: Colors.textTertiary,
+        fontWeight: '700',
+        letterSpacing: 1,
+        fontSize: 11,
+    },
+    infoValue: {
+        ...Typography.styles.body,
+        fontWeight: '500',
+        color: Colors.text,
+        textAlign: 'right',
+        maxWidth: '70%',
+    },
+    notesContainer: {
+        marginTop: Layout.spacing.lg,
+    },
+    notesValue: {
+        ...Typography.styles.body,
+        color: Colors.textSecondary,
+        marginTop: Layout.spacing.sm,
+        lineHeight: 22,
+    },
+
+    // Footer
+    footerActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 'auto', // Push to bottom if content is short
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: Colors.border,
+        paddingTop: Layout.spacing.lg,
+    },
+    footerButton: {
+        paddingHorizontal: Layout.spacing.lg,
     },
 });

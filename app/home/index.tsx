@@ -54,7 +54,7 @@ export default function HomeScreen() {
                 rightAction={
                     <View style={{ flexDirection: 'row' }}>
                         <TouchableOpacity onPress={handleSettingsPress} style={styles.iconButton}>
-                            <Ionicons name="settings-sharp" size={24} color={Colors.text} />
+                            <Ionicons name="person-circle-outline" size={28} color={Colors.text} />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => router.push('/qr/scan')} style={[styles.iconButton, { marginLeft: Layout.spacing.md }]}>
                             <Ionicons name="scan-outline" size={24} color={Colors.text} />

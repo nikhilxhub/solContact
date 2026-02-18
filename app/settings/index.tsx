@@ -19,6 +19,11 @@ export default function SettingsScreen() {
             <ScrollView contentContainerStyle={styles.content}>
 
                 <View style={styles.section}>
+                    <ListItem
+                        label="My Profile"
+                        showChevron
+                        onPress={() => router.push('/settings/profile')}
+                    />
                     <View style={styles.row}>
                         <View>
                             <Text style={styles.label}>Biometric Lock</Text>

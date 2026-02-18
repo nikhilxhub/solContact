@@ -27,6 +27,15 @@ export async function createTable() {
             createdAt INTEGER,
             updatedAt INTEGER
         );
+        CREATE TABLE IF NOT EXISTS user_profile (
+            id TEXT PRIMARY KEY NOT NULL,
+            name TEXT,
+            phoneNumber TEXT,
+            walletAddress TEXT,
+            skrAddress TEXT,
+            avatarUri TEXT,
+            updatedAt INTEGER
+        );
     `);
 
     // Migration helper to ensure columns exist (idempotent-ish for dev)

@@ -16,11 +16,13 @@ interface ButtonProps extends TouchableOpacityProps {
     title: string;
     loading?: boolean;
     variant?: 'primary' | 'outline' | 'text';
+    labelStyle?: any;
 }
 
 export const PrimaryButton: React.FC<ButtonProps> = ({
     title,
     style,
+    labelStyle,
     loading,
     variant = 'primary',
     onPress,
@@ -68,7 +70,7 @@ export const PrimaryButton: React.FC<ButtonProps> = ({
             {loading ? (
                 <ActivityIndicator color={getTextColor()} />
             ) : (
-                <Text style={[styles.text, { color: getTextColor() }]}>{title}</Text>
+                <Text style={[styles.text, { color: getTextColor() }, labelStyle]}>{title}</Text>
             )}
         </TouchableOpacity>
     );
@@ -77,6 +79,7 @@ export const PrimaryButton: React.FC<ButtonProps> = ({
 export const TextButton: React.FC<ButtonProps> = ({
     title,
     style,
+    labelStyle,
     onPress,
     disabled,
     ...props
@@ -99,6 +102,7 @@ export const TextButton: React.FC<ButtonProps> = ({
                 style={[
                     styles.textButtonLabel,
                     { color: disabled ? Colors.textTertiary : Colors.text },
+                    labelStyle,
                 ]}
             >
                 {title}
@@ -147,12 +151,14 @@ const styles = StyleSheet.create({
 interface IconActionButtonProps extends TouchableOpacityProps {
     icon: React.ReactNode;
     label?: string;
+    labelStyle?: any;
 }
 
 export const IconActionButton: React.FC<IconActionButtonProps> = ({
     icon,
     label,
     style,
+    labelStyle,
     onPress,
     ...props
 }) => {
@@ -166,7 +172,7 @@ export const IconActionButton: React.FC<IconActionButtonProps> = ({
             <View style={[styles.iconButtonContainer, style]}>
                 {icon}
             </View>
-            {label && <Text style={styles.iconButtonLabel}>{label}</Text>}
+            {label && <Text style={[styles.iconButtonLabel, labelStyle]}>{label}</Text>}
         </TouchableOpacity>
     );
 };
