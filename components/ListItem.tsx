@@ -1,10 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     TouchableOpacityProps,
+    GestureResponderEvent,
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
@@ -27,10 +28,10 @@ export const ListItem: React.FC<ListItemProps> = ({
     onPress,
     ...props
 }) => {
-    const handlePress = () => {
+    const handlePress = (event: GestureResponderEvent) => {
         if (onPress) {
             Haptics.selectionAsync();
-            onPress();
+            onPress(event);
         }
     };
 
