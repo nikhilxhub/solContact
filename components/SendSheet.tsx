@@ -17,6 +17,7 @@ interface SendSheetProps {
     tokens: TokenBalance[];
     selectedToken?: TokenBalance;
     loadingTokens: boolean;
+    connectingWallet: boolean;
     sending: boolean;
     amount: string;
     memo: string;
@@ -42,6 +43,7 @@ export function SendSheet({
     tokens,
     selectedToken,
     loadingTokens,
+    connectingWallet,
     sending,
     amount,
     memo,
@@ -85,7 +87,13 @@ export function SendSheet({
                             {!walletAddress ? (
                                 <View style={styles.walletBlock}>
                                     <Text style={styles.warningText}>Connect wallet to continue.</Text>
-                                    <PrimaryButton title="Connect Wallet" onPress={onConnect} style={styles.connectButton} />
+                                    <PrimaryButton
+                                        title="Connect Wallet"
+                                        onPress={onConnect}
+                                        loading={connectingWallet}
+                                        disabled={connectingWallet}
+                                        style={styles.connectButton}
+                                    />
                                 </View>
                             ) : (
                                 <View style={styles.walletBlock}>

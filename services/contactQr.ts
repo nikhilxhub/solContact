@@ -49,12 +49,11 @@ export function parseContactQrData(raw: string): {
         const parsed = JSON.parse(text) as Record<string, unknown>;
 
         const walletCandidate = cleanString(parsed.walletAddress) || cleanString(parsed.wallet);
-        const normalizedWallet = walletCandidate && isValidPublicKey(walletCandidate) ? walletCandidate : undefined;
 
         const result = {
             name: cleanString(parsed.name),
             phoneNumber: cleanString(parsed.phoneNumber) || cleanString(parsed.phone),
-            walletAddress: normalizedWallet,
+            walletAddress: walletCandidate,
             skrAddress: cleanString(parsed.skrAddress) || cleanString(parsed.skr),
         };
 

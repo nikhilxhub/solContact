@@ -28,7 +28,8 @@ import {
     sendSplTransfer,
 } from '../../services/solanaTransfers';
 import { PublicKey } from '@solana/web3.js';
-import { getExplorerTxUrl } from '../../services/network';
+import { getExplorerTxUrl, getWalletChain } from '../../services/network';
+import { getWalletConnectMessage, getWalletErrorDetails } from '../../services/walletErrors';
 
 export default function ContactDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -43,6 +44,7 @@ export default function ContactDetailScreen() {
     const [tokens, setTokens] = useState<TokenBalance[]>([]);
     const [selectedToken, setSelectedToken] = useState<TokenBalance | undefined>();
     const [loadingTokens, setLoadingTokens] = useState(false);
+    const [connectingWallet, setConnectingWallet] = useState(false);
     const [sending, setSending] = useState(false);
 
     const [amount, setAmount] = useState('');
@@ -152,30 +154,49 @@ export default function ContactDetailScreen() {
         });
     };
 
-    const handleCall = () => {
+    const handleCall = async () => {
         if (!contact?.phoneNumber) {
             Alert.alert('Error', 'No phone number available');
             return;
         }
 
-        const url = `tel:${contact.phoneNumber}`;
-        Linking.canOpenURL(url).then((supported) => {
-            if (supported) {
-                Linking.openURL(url);
-            } else {
-                Alert.alert('Error', 'Phone dialer not available');
-            }
-        });
+        const normalizedNumber = contact.phoneNumber.trim().replace(/[^\d+]/g, '');
+        if (!normalizedNumber) {
+            Alert.alert('Error', 'Invalid phone number');
+            return;
+        }
+
+        try {
+            await Linking.openURL(`tel:${normalizedNumber}`);
+        } catch (error) {
+            console.error('Dialer open failed:', error);
+            Alert.alert('Error', 'Phone dialer not available');
+        }
     };
 
     const handleConnectWallet = async () => {
+        if (connectingWallet) {
+            return;
+        }
+
         try {
+            setConnectingWallet(true);
+            console.log('Wallet connect attempt', {
+                network,
+                walletChain: getWalletChain(network),
+                rpcEndpoint: connection.rpcEndpoint,
+            });
             const connected = await connect();
             const connectedPublicKey = connected.address || connected.publicKey;
+            if (!connectedPublicKey) {
+                throw new Error('Wallet connected without an account');
+            }
             await refreshTokens(connectedPublicKey);
         } catch (error) {
             console.error('Wallet connection failed:', error);
-            Alert.alert('Wallet connection failed', 'Could not connect to a mobile wallet.');
+            Alert.alert('Wallet connection failed', `${getWalletConnectMessage(error)}\n\n${getWalletErrorDetails(error)}`);
+        } finally {
+            setConnectingWallet(false);
         }
     };
 
@@ -280,9 +301,23 @@ export default function ContactDetailScreen() {
 
         let sender = accountPublicKey;
         if (!sender) {
-            const connected = await connect();
-            sender = connected.address || connected.publicKey;
-            await refreshTokens(sender);
+            try {
+                setConnectingWallet(true);
+                console.log('Wallet connect attempt before send', {
+                    network,
+                    walletChain: getWalletChain(network),
+                    rpcEndpoint: connection.rpcEndpoint,
+                });
+                const connected = await connect();
+                sender = connected.address || connected.publicKey;
+                await refreshTokens(sender);
+            } catch (error) {
+                console.error('Wallet connection failed before send:', error);
+                Alert.alert('Wallet connection failed', `${getWalletConnectMessage(error)}\n\n${getWalletErrorDetails(error)}`);
+                return;
+            } finally {
+                setConnectingWallet(false);
+            }
         }
 
         if (!sender) {
@@ -490,6 +525,7 @@ export default function ContactDetailScreen() {
                 tokens={tokens}
                 selectedToken={selectedToken}
                 loadingTokens={loadingTokens}
+                connectingWallet={connectingWallet}
                 sending={sending}
                 amount={amount}
                 memo={memo}

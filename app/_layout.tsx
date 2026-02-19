@@ -6,18 +6,20 @@ import { createTable } from '../services/Database';
 import { useEffect, useState } from 'react';
 import { MobileWalletProvider } from '@wallet-ui/react-native-web3js';
 import { AppNetworkProvider, useAppNetwork } from '../contexts/AppNetworkContext';
+import { getWalletChain } from '../services/network';
 
 const APP_IDENTITY = {
     name: 'SolContact',
-    uri: 'https://solcontact.app',
-    icon: 'https://solana.com/favicon.ico',
+    ...(process.env.EXPO_PUBLIC_APP_IDENTITY_URI ? { uri: process.env.EXPO_PUBLIC_APP_IDENTITY_URI } : {}),
+    ...(process.env.EXPO_PUBLIC_APP_IDENTITY_ICON ? { icon: process.env.EXPO_PUBLIC_APP_IDENTITY_ICON } : {}),
 };
 
 function AppNavigationStack() {
     const { network, rpcEndpoint } = useAppNetwork();
+    const walletChain = getWalletChain(network);
 
     return (
-        <MobileWalletProvider chain={network} endpoint={rpcEndpoint} identity={APP_IDENTITY}>
+        <MobileWalletProvider chain={walletChain} endpoint={rpcEndpoint} identity={APP_IDENTITY}>
             <Stack
                 screenOptions={{
                     headerShown: false,
