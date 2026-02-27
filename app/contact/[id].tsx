@@ -1,23 +1,22 @@
-﻿import { View, Text, StyleSheet, ScrollView, Linking, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Linking, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { ScreenContainer } from '../../components/ScreenContainer';
-import { AppHeader } from '../../components/AppHeader';
-import { Avatar } from '../../components/Avatar';
-import { TextButton, IconActionButton } from '../../components/Buttons';
-import { Layout } from '../../constants/Layout';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { ScreenContainer } from '@/shared/components/ScreenContainer';
+import { AppHeader } from '@/shared/components/AppHeader';
+import { Avatar } from '@/shared/components/Avatar';
+import { TextButton, IconActionButton } from '@/shared/components/Buttons';
+import { Layout } from '@/shared/theme/Layout';
+import { Typography } from '@/shared/theme/Typography';
+import { Colors } from '@/shared/theme/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useCallback, useMemo } from 'react';
-import { ContactRepository } from '../../repositories/ContactRepository';
-import { PaymentTemplateRepository } from '../../repositories/PaymentTemplateRepository';
-import { Contact, PaymentTemplate, TokenBalance } from '../../types';
+import { ContactRepository } from '@/features/contacts/data/ContactRepository';
+import { PaymentTemplateRepository } from '@/features/payments/data/PaymentTemplateRepository';
+import { Contact, PaymentTemplate, TokenBalance } from '@/shared/types';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { SendSheet } from '../../components/SendSheet';
-import { TemplateChips } from '../../components/TemplateChips';
-import { useMobileWallet } from '@wallet-ui/react-native-web3js';
-import { useAppNetwork } from '../../contexts/AppNetworkContext';
+import { SendSheet } from '@/shared/components/SendSheet';
+import { TemplateChips } from '@/shared/components/TemplateChips';
+import { useAppNetwork } from '@/features/settings/context/AppNetworkContext';
 import {
     SOL_SENTINEL_MINT,
     amountToRaw,
@@ -26,10 +25,11 @@ import {
     rawToAmountUi,
     sendSolTransfer,
     sendSplTransfer,
-} from '../../services/solanaTransfers';
+} from '@/features/wallet/services/solanaTransfers';
 import { PublicKey } from '@solana/web3.js';
-import { getExplorerTxUrl, getWalletChain } from '../../services/network';
-import { getWalletConnectMessage, getWalletErrorDetails } from '../../services/walletErrors';
+import { getExplorerTxUrl, getWalletChain } from '@/features/wallet/services/network';
+import { useWallet } from '@/features/wallet/hooks/useWallet';
+import { getWalletSendMessage, isWalletUserDeclinedError } from '@/features/wallet/services/walletErrors';
 
 export default function ContactDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -44,7 +44,6 @@ export default function ContactDetailScreen() {
     const [tokens, setTokens] = useState<TokenBalance[]>([]);
     const [selectedToken, setSelectedToken] = useState<TokenBalance | undefined>();
     const [loadingTokens, setLoadingTokens] = useState(false);
-    const [connectingWallet, setConnectingWallet] = useState(false);
     const [sending, setSending] = useState(false);
 
     const [amount, setAmount] = useState('');
@@ -52,9 +51,9 @@ export default function ContactDetailScreen() {
     const [templateLabel, setTemplateLabel] = useState('');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
-    const { account, connect, disconnect, signAndSendTransaction, connection } = useMobileWallet();
-    const accountPublicKey: PublicKey | undefined = account?.address || account?.publicKey;
-    const connectedWalletAddress = accountPublicKey?.toBase58();
+    const wallet = useWallet();
+    const accountPublicKey: PublicKey | undefined = wallet.publicKey;
+    const connectedWalletAddress = wallet.walletAddress;
 
     useFocusEffect(
         useCallback(() => {
@@ -104,7 +103,7 @@ export default function ContactDetailScreen() {
 
         try {
             setLoadingTokens(true);
-            const fetched = await fetchTokenBalances(connection, owner);
+            const fetched = await fetchTokenBalances(wallet.connection, owner);
             setTokens(fetched);
 
             setSelectedToken((previous) => {
@@ -175,39 +174,27 @@ export default function ContactDetailScreen() {
     };
 
     const handleConnectWallet = async () => {
-        if (connectingWallet) {
+        if (wallet.connecting) {
             return;
         }
 
         try {
-            setConnectingWallet(true);
-            console.log('Wallet connect attempt', {
-                network,
-                walletChain: getWalletChain(network),
-                rpcEndpoint: connection.rpcEndpoint,
-            });
-            const connected = await connect();
-            const connectedPublicKey = connected.address || connected.publicKey;
-            if (!connectedPublicKey) {
-                throw new Error('Wallet connected without an account');
-            }
+            const connectedPublicKey = await wallet.connect();
             await refreshTokens(connectedPublicKey);
         } catch (error) {
             console.error('Wallet connection failed:', error);
-            Alert.alert('Wallet connection failed', `${getWalletConnectMessage(error)}\n\n${getWalletErrorDetails(error)}`);
-        } finally {
-            setConnectingWallet(false);
+            Alert.alert('Wallet connection failed', wallet.getConnectErrorAlertMessage(error));
         }
     };
 
     const handleDisconnectWallet = async () => {
         try {
-            await disconnect();
+            await wallet.disconnect();
             setTokens([]);
             setSelectedToken(undefined);
         } catch (error) {
             console.error('Wallet disconnect failed:', error);
-            Alert.alert('Wallet disconnect failed', 'Could not disconnect the current wallet session.');
+            Alert.alert('Wallet disconnect failed', wallet.getDisconnectErrorAlertMessage(error));
         }
     };
 
@@ -299,25 +286,33 @@ export default function ContactDetailScreen() {
             return;
         }
 
-        let sender = accountPublicKey;
-        if (!sender) {
-            try {
-                setConnectingWallet(true);
-                console.log('Wallet connect attempt before send', {
-                    network,
-                    walletChain: getWalletChain(network),
-                    rpcEndpoint: connection.rpcEndpoint,
-                });
-                const connected = await connect();
-                sender = connected.address || connected.publicKey;
+        const expectedWalletChain = getWalletChain(network);
+        if (wallet.walletChain !== expectedWalletChain) {
+            Alert.alert(
+                'Wallet network mismatch',
+                `Expected ${expectedWalletChain} but wallet is configured for ${wallet.walletChain}. Reconnect wallet and try again.`
+            );
+            return;
+        }
+
+        if (!wallet.connection?.rpcEndpoint) {
+            Alert.alert('Wallet unavailable', 'Wallet RPC endpoint is unavailable. Reconnect wallet and try again.');
+            return;
+        }
+
+        let sender: PublicKey;
+        try {
+            // Ensures wallet authorization is active before building the transaction.
+            sender = await wallet.ensureConnected();
+            if (!accountPublicKey || accountPublicKey.toBase58() !== sender.toBase58()) {
                 await refreshTokens(sender);
-            } catch (error) {
-                console.error('Wallet connection failed before send:', error);
-                Alert.alert('Wallet connection failed', `${getWalletConnectMessage(error)}\n\n${getWalletErrorDetails(error)}`);
-                return;
-            } finally {
-                setConnectingWallet(false);
             }
+        } catch (error) {
+            if (!isWalletUserDeclinedError(error)) {
+                console.error('Wallet connection failed before send:', error);
+            }
+            Alert.alert('Wallet connection failed', wallet.getConnectErrorAlertMessage(error));
+            return;
         }
 
         if (!sender) {
@@ -343,8 +338,8 @@ export default function ContactDetailScreen() {
             let signature: string;
             if (selectedToken.isNative) {
                 signature = await sendSolTransfer({
-                    connection,
-                    signAndSendTransaction,
+                    connection: wallet.connection,
+                    signAndSendTransaction: wallet.signAndSendTransaction,
                     from: sender,
                     to: recipient,
                     amountUi: amount,
@@ -357,8 +352,8 @@ export default function ContactDetailScreen() {
                 }
 
                 signature = await sendSplTransfer({
-                    connection,
-                    signAndSendTransaction,
+                    connection: wallet.connection,
+                    signAndSendTransaction: wallet.signAndSendTransaction,
                     owner: sender,
                     destinationOwner: recipient,
                     mintAddress: selectedToken.mintAddress,
@@ -395,9 +390,16 @@ export default function ContactDetailScreen() {
                     },
                 },
             ]);
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const sendMessage = getWalletSendMessage(error);
+
+            if (isWalletUserDeclinedError(error)) {
+                Alert.alert('Transfer canceled', sendMessage);
+                return;
+            }
+
             console.error('Send failed:', error);
-            Alert.alert('Transfer failed', error?.message || 'Could not complete this transaction.');
+            Alert.alert('Transfer failed', `${sendMessage}\n\n${wallet.getDisconnectErrorAlertMessage(error)}`);
         } finally {
             setSending(false);
         }
@@ -525,7 +527,7 @@ export default function ContactDetailScreen() {
                 tokens={tokens}
                 selectedToken={selectedToken}
                 loadingTokens={loadingTokens}
-                connectingWallet={connectingWallet}
+                connectingWallet={wallet.connecting}
                 sending={sending}
                 amount={amount}
                 memo={memo}

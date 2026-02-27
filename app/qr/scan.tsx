@@ -1,12 +1,12 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Button, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { TextButton } from '../../components/Buttons';
-import { Layout } from '../../constants/Layout';
-import { Typography } from '../../constants/Typography';
+import { TextButton } from '@/shared/components/Buttons';
+import { Layout } from '@/shared/theme/Layout';
+import { Typography } from '@/shared/theme/Typography';
 import { StatusBar } from 'expo-status-bar';
-import { parseContactQrData } from '../../services/contactQr';
+import { parseContactQrData } from '@/features/qr/services/contactQr';
 
 export default function QRScanScreen() {
     const router = useRouter();

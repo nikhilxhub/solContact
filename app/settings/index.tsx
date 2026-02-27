@@ -1,31 +1,26 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenContainer } from '../../components/ScreenContainer';
-import { AppHeader } from '../../components/AppHeader';
-import { ListItem } from '../../components/ListItem';
-import { SectionDivider } from '../../components/SectionDivider';
-import { PrimaryButton, TextButton } from '../../components/Buttons';
-import { Layout } from '../../constants/Layout';
-import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
-import { useAppNetwork } from '../../contexts/AppNetworkContext';
-import { NetworkType } from '../../types';
-import { useMobileWallet } from '@wallet-ui/react-native-web3js';
-import { getWalletConnectMessage, getWalletErrorDetails } from '../../services/walletErrors';
-import { getWalletChain } from '../../services/network';
+import { ScreenContainer } from '@/shared/components/ScreenContainer';
+import { AppHeader } from '@/shared/components/AppHeader';
+import { ListItem } from '@/shared/components/ListItem';
+import { SectionDivider } from '@/shared/components/SectionDivider';
+import { PrimaryButton, TextButton } from '@/shared/components/Buttons';
+import { Layout } from '@/shared/theme/Layout';
+import { Colors } from '@/shared/theme/Colors';
+import { Typography } from '@/shared/theme/Typography';
+import { useAppNetwork } from '@/features/settings/context/AppNetworkContext';
+import { NetworkType } from '@/shared/types';
+import { useWallet } from '@/features/wallet/hooks/useWallet';
 
 export default function SettingsScreen() {
     const router = useRouter();
-    const { network, networkLabel, setNetwork, rpcEndpoint } = useAppNetwork();
-    const { account, connect, disconnect } = useMobileWallet();
+    const { network, networkLabel, setNetwork } = useAppNetwork();
+    const wallet = useWallet();
 
     const [biometricEnabled, setBiometricEnabled] = useState(false);
     const [updatingNetwork, setUpdatingNetwork] = useState(false);
-    const [connectingWallet, setConnectingWallet] = useState(false);
-    const [disconnectingWallet, setDisconnectingWallet] = useState(false);
-
-    const walletAddress = (account?.address || account?.publicKey)?.toBase58();
+    const walletAddress = wallet.walletAddress;
 
     const handleNetworkChange = async (nextNetwork: NetworkType) => {
         if (nextNetwork === network) {
@@ -43,39 +38,28 @@ export default function SettingsScreen() {
     };
 
     const handleConnectWallet = async () => {
-        if (connectingWallet) {
+        if (wallet.connecting) {
             return;
         }
 
         try {
-            setConnectingWallet(true);
-            console.log('Wallet connect attempt from settings', {
-                network,
-                walletChain: getWalletChain(network),
-                rpcEndpoint,
-            });
-            await connect();
+            await wallet.connect();
         } catch (error) {
             console.error('Wallet connection failed:', error);
-            Alert.alert('Wallet connection failed', `${getWalletConnectMessage(error)}\n\n${getWalletErrorDetails(error)}`);
-        } finally {
-            setConnectingWallet(false);
+            Alert.alert('Wallet connection failed', wallet.getConnectErrorAlertMessage(error));
         }
     };
 
     const handleDisconnectWallet = async () => {
-        if (disconnectingWallet) {
+        if (wallet.disconnecting) {
             return;
         }
 
         try {
-            setDisconnectingWallet(true);
-            await disconnect();
+            await wallet.disconnect();
         } catch (error) {
             console.error('Wallet disconnect failed:', error);
-            Alert.alert('Wallet disconnect failed', getWalletErrorDetails(error));
-        } finally {
-            setDisconnectingWallet(false);
+            Alert.alert('Wallet disconnect failed', wallet.getDisconnectErrorAlertMessage(error));
         }
     };
 
@@ -105,7 +89,7 @@ export default function SettingsScreen() {
                     <View style={styles.networkSection}>
                         <Text style={styles.label}>Solana Network</Text>
                         <Text style={styles.sublabel}>{`Active: ${networkLabel}`}</Text>
-                        <Text style={styles.sublabel}>{`MWA chain: ${getWalletChain(network)}`}</Text>
+                        <Text style={styles.sublabel}>{`MWA chain: ${wallet.walletChain}`}</Text>
 
                         <View style={styles.networkButtons}>
                             <TouchableOpacity
@@ -159,17 +143,17 @@ export default function SettingsScreen() {
                                     {walletAddress}
                                 </Text>
                                 <TextButton
-                                    title={disconnectingWallet ? 'Disconnecting...' : 'Disconnect'}
+                                    title={wallet.disconnecting ? 'Disconnecting...' : 'Disconnect'}
                                     onPress={handleDisconnectWallet}
-                                    disabled={disconnectingWallet}
+                                    disabled={wallet.disconnecting}
                                 />
                             </View>
                         ) : (
                             <PrimaryButton
                                 title="Connect Wallet"
                                 onPress={handleConnectWallet}
-                                loading={connectingWallet}
-                                disabled={connectingWallet}
+                                loading={wallet.connecting}
+                                disabled={wallet.connecting}
                                 style={styles.walletButton}
                             />
                         )}

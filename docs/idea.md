@@ -1,7 +1,7 @@
 ﻿# SolContact: Seeker-First Contact dApp
 
 ## Vision
-SolContact is a mobile contact app where each contact is also a Solana payment endpoint.
+Consol is a mobile contact app where each contact is also a Solana payment endpoint.
 Instead of remembering wallet strings, users store people by name and send SOL/SPL from the contact detail page.
 
 ## First Principles

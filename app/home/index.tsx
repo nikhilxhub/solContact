@@ -1,14 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { ScreenContainer } from '../../components/ScreenContainer';
-import { AppHeader } from '../../components/AppHeader';
-import { ContactCard } from '../../components/ContactCard';
-import { Layout } from '../../constants/Layout';
-import { Colors } from '../../constants/Colors';
+import { ScreenContainer } from '@/shared/components/ScreenContainer';
+import { AppHeader } from '@/shared/components/AppHeader';
+import { ContactCard } from '@/shared/components/ContactCard';
+import { Layout } from '@/shared/theme/Layout';
+import { Colors } from '@/shared/theme/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { ContactRepository } from '../../repositories/ContactRepository';
-import { Contact } from '../../types';
+import { ContactRepository } from '@/features/contacts/data/ContactRepository';
+import { Contact } from '@/shared/types';
 
 
 

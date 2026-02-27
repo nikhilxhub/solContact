@@ -1,19 +1,19 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import * as Haptics from 'expo-haptics';
 
-import { ScreenContainer } from '../../components/ScreenContainer';
-import { AppHeader } from '../../components/AppHeader';
-import { PrimaryButton, TextButton } from '../../components/Buttons';
-import { Avatar } from '../../components/Avatar';
-import { Layout } from '../../constants/Layout';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
-import { UserProfileRepository } from '../../repositories/UserProfileRepository';
-import { buildContactQrPayload } from '../../services/contactQr';
+import { ScreenContainer } from '@/shared/components/ScreenContainer';
+import { AppHeader } from '@/shared/components/AppHeader';
+import { PrimaryButton, TextButton } from '@/shared/components/Buttons';
+import { Avatar } from '@/shared/components/Avatar';
+import { Layout } from '@/shared/theme/Layout';
+import { Typography } from '@/shared/theme/Typography';
+import { Colors } from '@/shared/theme/Colors';
+import { UserProfileRepository } from '@/features/profile/data/UserProfileRepository';
+import { buildContactQrPayload } from '@/features/qr/services/contactQr';
 
 const { width } = Dimensions.get('window');
 
