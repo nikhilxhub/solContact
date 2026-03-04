@@ -1,4 +1,4 @@
-﻿# SolContact: Seeker-First Contact dApp
+﻿# SolCircle: Seeker-First Contact dApp
 
 ## Vision
 Consol is a mobile contact app where each contact is also a Solana payment endpoint.

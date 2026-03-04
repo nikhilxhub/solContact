@@ -25,7 +25,7 @@ export default function SplashScreen() {
     return (
         <View style={styles.container}>
             <Animated.Text style={[styles.logo, { opacity: fadeAnim }]}>
-                Seeker
+                SolCircle
             </Animated.Text>
         </View>
     );

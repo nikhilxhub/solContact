@@ -168,7 +168,7 @@ export default function SettingsScreen() {
 
                 <View style={styles.section}>
                     <ListItem label="Help & Support" showChevron onPress={() => {}} />
-                    <ListItem label="About Seeker" value="v1.0.0" onPress={() => {}} />
+                    <ListItem label="About SolCircle" value="v1.0.0" onPress={() => {}} />
                 </View>
             </ScrollView>
         </ScreenContainer>
