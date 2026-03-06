@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+    View,
+    StyleSheet,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableOpacity,
+    ActivityIndicator,
+    Alert,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { AppHeader } from '@/shared/components/AppHeader';
@@ -10,6 +19,14 @@ import { ContactRepository } from '@/features/contacts/data/ContactRepository';
 import { Contact } from '@/shared/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { isValidPublicKey } from '@/features/wallet/services/solanaTransfers';
+
+function getParamValue(value: string | string[] | undefined): string | undefined {
+    if (Array.isArray(value)) {
+        return value[0];
+    }
+    return value;
+}
 
 export default function AddContactScreen() {
     const router = useRouter();
@@ -23,17 +40,31 @@ export default function AddContactScreen() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     React.useEffect(() => {
-        if (params.walletAddress) setWallet(params.walletAddress as string);
-        if (params.name) setName(params.name as string);
-        if (params.phone) setPhone(params.phone as string);
-        if (params.skrAddress) setSkr(params.skrAddress as string);
+        const walletAddress = getParamValue(params.walletAddress);
+        const name = getParamValue(params.name);
+        const phone = getParamValue(params.phone) || getParamValue(params.phoneNumber);
+        const skrAddress = getParamValue(params.skrAddress);
+
+        if (walletAddress) setWallet(walletAddress);
+        if (name) setName(name);
+        if (phone) setPhone(phone);
+        if (skrAddress) setSkr(skrAddress);
     }, [params]);
 
     const handleSave = async () => {
         if (!name.trim()) {
-            alert('Name is required');
+            Alert.alert('Validation', 'Name is required');
             return;
         }
+
+        const walletAddress = wallet.trim();
+        if (walletAddress && !isValidPublicKey(walletAddress)) {
+            Alert.alert('Validation', 'Enter a valid Solana wallet address.');
+            return;
+        }
+
+        const addedViaParam = getParamValue(params.addedVia);
+        const addedVia: Contact['addedVia'] = addedViaParam === 'qr' ? 'qr' : 'manual';
 
         try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -42,10 +73,10 @@ export default function AddContactScreen() {
                 id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
                 name: name.trim(),
                 phoneNumber: phone.trim(),
-                walletAddress: wallet.trim(),
+                walletAddress,
                 skrAddress: skr.trim(),
                 notes: notes.trim(),
-                addedVia: 'manual',
+                addedVia,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             };
@@ -54,7 +85,7 @@ export default function AddContactScreen() {
             router.back();
         } catch (error) {
             console.error('Failed to save contact:', error);
-            alert('Failed to save contact');
+            Alert.alert('Error', 'Failed to save contact');
         } finally {
             setIsSubmitting(false);
         }

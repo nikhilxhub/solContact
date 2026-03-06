@@ -9,6 +9,7 @@ import { PrimaryButton, TextButton } from '@/shared/components/Buttons';
 import { ContactRepository } from '@/features/contacts/data/ContactRepository';
 import { Contact } from '@/shared/types';
 import { Colors } from '@/shared/theme/Colors';
+import { isValidPublicKey } from '@/features/wallet/services/solanaTransfers';
 
 export default function EditContactScreen() {
     const { id } = useLocalSearchParams();
@@ -58,14 +59,20 @@ export default function EditContactScreen() {
             return;
         }
 
+        const walletAddress = wallet.trim();
+        if (walletAddress && !isValidPublicKey(walletAddress)) {
+            Alert.alert('Validation', 'Enter a valid Solana wallet address.');
+            return;
+        }
+
         try {
             const updatedContact: Contact = {
                 ...originalContact,
-                name,
-                phoneNumber: phone,
-                walletAddress: wallet,
-                skrAddress: skr,
-                notes,
+                name: name.trim(),
+                phoneNumber: phone.trim(),
+                walletAddress,
+                skrAddress: skr.trim(),
+                notes: notes.trim(),
                 updatedAt: Date.now(),
             };
 

@@ -54,6 +54,7 @@ export default function QRScanScreen() {
                 phone: parsed.phoneNumber || '',
                 walletAddress: parsed.walletAddress || '',
                 skrAddress: parsed.skrAddress || '',
+                addedVia: 'qr',
             },
         });
     };

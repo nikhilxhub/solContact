@@ -15,12 +15,14 @@ import * as Haptics from 'expo-haptics';
 interface ContactCardProps extends TouchableOpacityProps {
     name: string;
     detail: string;
+    addedVia?: 'manual' | 'qr';
     onPress: () => void;
 }
 
 export const ContactCard: React.FC<ContactCardProps> = ({
     name,
     detail,
+    addedVia,
     onPress,
     ...props
 }) => {
@@ -38,9 +40,16 @@ export const ContactCard: React.FC<ContactCardProps> = ({
         >
             <Avatar name={name} size={50} />
             <View style={styles.textContainer}>
-                <Text style={styles.name} numberOfLines={1}>
-                    {name}
-                </Text>
+                <View style={styles.nameRow}>
+                    <Text style={styles.name} numberOfLines={1}>
+                        {name}
+                    </Text>
+                    {addedVia === 'qr' ? (
+                        <View style={styles.qrBadge}>
+                            <Text style={styles.qrBadgeText}>QR</Text>
+                        </View>
+                    ) : null}
+                </View>
                 {/* Only show detail if it exists, caption style */}
                 {detail ? (
                     <Text style={styles.detail} numberOfLines={1}>
@@ -70,12 +79,33 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
     },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Layout.spacing.xs,
+    },
     name: {
         ...Typography.styles.body,
         fontWeight: '700', // Stronger weight
         fontSize: 17, // Slightly larger
         color: Colors.text,
         marginBottom: 2,
+        maxWidth: '88%',
+    },
+    qrBadge: {
+        borderWidth: 1,
+        borderColor: Colors.border,
+        borderRadius: Layout.radius.round,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        backgroundColor: Colors.secondary,
+    },
+    qrBadgeText: {
+        ...Typography.styles.caption,
+        color: Colors.textSecondary,
+        fontWeight: '700',
+        fontSize: 10,
+        letterSpacing: 0.6,
     },
     detail: {
         ...Typography.styles.caption,

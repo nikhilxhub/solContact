@@ -87,6 +87,7 @@ export default function HomeScreen() {
                         <ContactCard
                             name={item.name}
                             detail={item.skrAddress || item.walletAddress || item.phoneNumber || 'No details'}
+                            addedVia={item.addedVia}
                             onPress={() => handleContactPress(item.id)}
                         />
                     )}

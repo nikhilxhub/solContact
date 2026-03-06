@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { AppHeader } from '@/shared/components/AppHeader';
-import { PrimaryButton, TextButton } from '@/shared/components/Buttons';
+import { TextButton } from '@/shared/components/Buttons';
 import { Avatar } from '@/shared/components/Avatar';
 import { Layout } from '@/shared/theme/Layout';
 import { Typography } from '@/shared/theme/Typography';
@@ -94,10 +94,6 @@ export default function QRGenerateScreen() {
         }
     };
 
-    const handleShare = () => {
-        // Native share can be added here later.
-    };
-
     if (loading) {
         return (
             <ScreenContainer>
@@ -142,7 +138,6 @@ export default function QRGenerateScreen() {
                 </View>
 
                 <View style={styles.actionSection}>
-                    <PrimaryButton title="Share Contact" onPress={handleShare} style={styles.actionButton} />
                     <TextButton title="Copy Address" onPress={handleCopy} />
                 </View>
             </ScrollView>
@@ -210,8 +205,5 @@ const styles = StyleSheet.create({
         width: '100%',
         gap: Layout.spacing.md,
         marginTop: 'auto',
-    },
-    actionButton: {
-        width: '100%',
     },
 });
