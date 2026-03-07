@@ -30,6 +30,8 @@ export default function RootLayout() {
                     <Stack.Screen name="templates/index" />
                     <Stack.Screen name="settings/profile/index" />
                     <Stack.Screen name="settings/profile/edit" />
+                    <Stack.Screen name="settings/privacy/index" />
+                    <Stack.Screen name="settings/help/index" />
                     <Stack.Screen name="wallet/phantom-connect" />
                     <Stack.Screen name="wallet/phantom-sign" />
                 </Stack>

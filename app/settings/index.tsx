@@ -165,11 +165,11 @@ export default function SettingsScreen() {
                     <SectionDivider />
 
                     <ListItem label="Notifications" showChevron onPress={() => {}} />
-                    <ListItem label="Privacy" showChevron onPress={() => {}} />
+                    <ListItem label="Privacy" showChevron onPress={() => router.push('/settings/privacy')} />
                 </View>
 
                 <View style={styles.section}>
-                    <ListItem label="Help & Support" showChevron onPress={() => {}} />
+                    <ListItem label="Help & Support" showChevron onPress={() => router.push('/settings/help')} />
                     <ListItem label="About SolCircle" value="v1.0.0" onPress={() => {}} />
                 </View>
             </ScrollView>

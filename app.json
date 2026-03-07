@@ -23,7 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.contacts"
+      "package": "in.nikhilx.solcircle"
     },
     "web": {
       "favicon": "./assets/favicon.png"
