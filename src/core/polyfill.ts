@@ -1,16 +1,25 @@
-﻿import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import { getRandomValues as expoCryptoGetRandomValues } from 'expo-crypto';
 import { Buffer } from 'buffer';
 
-if (typeof globalThis.Buffer === 'undefined') {
-    globalThis.Buffer = Buffer;
+global.Buffer = global.Buffer || Buffer;
+globalThis.Buffer = globalThis.Buffer || Buffer;
+
+class Crypto {
+    getRandomValues = expoCryptoGetRandomValues;
 }
 
-if (typeof globalThis.crypto === 'undefined') {
+const webCrypto = typeof crypto !== 'undefined' ? crypto : new Crypto();
+
+if (typeof crypto === 'undefined') {
     Object.defineProperty(globalThis, 'crypto', {
         configurable: true,
         enumerable: true,
-        value: { getRandomValues: expoCryptoGetRandomValues },
+        get: () => webCrypto,
+    });
+    Object.defineProperty(global, 'crypto', {
+        configurable: true,
+        enumerable: true,
+        get: () => webCrypto,
     });
 }
